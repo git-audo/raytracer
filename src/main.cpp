@@ -275,12 +275,15 @@ int main(int argc, char** argv)
     float focalDistance = 1.0f;
     Vec3 screenCenter = camera.pos - (camera.Z * focalDistance);
 
+    float pixelW = (screenW / (float)width);
+    float pixelH = (screenH / (float)height);
+
     if (width > height)
     {
         screenH = (float) height / (float) width;
     }
 
-    uint8_t raysPerPixel = 64;
+    uint8_t raysPerPixel = 4;
     for (size_t x = 0; x<width; x++)
     {
         float screenX = (float) x * 2.0f / (float) width - 1.0f;
@@ -291,8 +294,8 @@ int main(int argc, char** argv)
             Vec3 pixelColor = Vec3(0, 0, 0);
             for (uint8_t i = 0; i < raysPerPixel; i++)
             {
-                float xAntialiasJitter = (randomFloat() * 2 - 1) * (0.5f / (float)width);
-                float yAntialiasJitter = (randomFloat() * 2 - 1) * (0.5f / (float)height);
+                float xAntialiasJitter = (randomFloat() * 2 - 1) * pixelW;
+                float yAntialiasJitter = (randomFloat() * 2 - 1) * pixelH;
                 float xOffset = screenX * 0.5f * screenW + xAntialiasJitter;
                 float yOffset = screenY * 0.5f * screenH + yAntialiasJitter;
                 Vec3 screenP = screenCenter + camera.X * xOffset + camera.Y * yOffset;
