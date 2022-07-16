@@ -1,11 +1,16 @@
-
 #include <cmath>
 #include <vector>
 #include <fstream>
 #include <iostream>
 #include <float.h>
 
-struct Vec3 {
+float randomFloat()
+{
+    return (float)rand() / (float)RAND_MAX;
+}
+
+struct Vec3
+{
     float x=0, y=0, z=0;
 
     Vec3(float x, float y, float z) : x(x), y(y), z(z) {};
@@ -38,6 +43,12 @@ struct Vec3 {
         }
     };
 
+    void randomize() {
+        x = randomFloat() * 2.0f - 1;
+        y = randomFloat() * 2.0f - 1;
+        z = randomFloat() * 2.0f - 1;
+    };
+
     Vec3 cross(const Vec3& v) {
         Vec3 result = {};
         result.x = y * v.z - z * v.y;
@@ -52,6 +63,11 @@ struct Vec3 {
     }
 };
 
+Vec3 lerp(Vec3 start, Vec3 end, float t)
+{
+    return start * (1 - t) + end * t;
+}
+
 struct Camera
 {
     Vec3 pos;
@@ -63,10 +79,20 @@ struct Camera
     Camera() {};
 };
 
+struct Material
+{
+    Vec3 emittedColor;
+    Vec3 reflectedColor;
+    float reflectance;
+
+    Material() {};
+};
+
 struct Plane
 {
     Vec3  normal;
     float distance;
+    Material material;
 
     Plane(Vec3 n, float d) : normal(n), distance(d) {};
     Plane() {};
@@ -76,6 +102,7 @@ struct Sphere
 {
     Vec3  center;
     float radius;
+    Material material;
 
     Sphere(Vec3 c, float r) : center(c), radius(r) {};
     Sphere() {};
@@ -89,18 +116,20 @@ struct Scene
 
 Vec3 raycast(Vec3 rayOrigin, Vec3 rayDirection, Scene scene)
 {
-    Vec3 backgroundColor = Vec3(0.6, 0.6, 0.9);
-    Vec3 groundColor = Vec3(0.7, 0.6, 0.4);
-    Vec3 sphereColor = Vec3(0.4, 0.5, 0.6);
+    Material background = {};
+    background.emittedColor = Vec3(0.6f, 0.6f, 0.9f);
 
-    Vec3 currentColor = backgroundColor;
     float minDistance = FLT_MAX;
     float epsilon = 0.0001f;
+    Vec3 finalColor = {};
+    Vec3 attenuation = Vec3(1, 1, 1);
 
+    Material previousMaterial = {};
+    Material nextMaterial = background;
     Vec3 nextOrigin = Vec3();
-    Vec3 nextDirection = Vec3();
+    Vec3 nextNormal = Vec3();
 
-    uint8_t castingDistance = 3;
+    uint8_t castingDistance = 4;
     for (uint8_t i = 0; i < castingDistance; i++)
     {
         for (Plane p : scene.planes)
@@ -113,20 +142,10 @@ Vec3 raycast(Vec3 rayOrigin, Vec3 rayDirection, Scene scene)
                 float dis = numerator / denominator;
                 if (dis > 0 && dis < FLT_MAX)
                 {
-                    if (currentColor != backgroundColor)
-                    {
-                        currentColor = currentColor * (groundColor * 0.3);
-                        currentColor.normalize();
-                    }
-                    else
-                    {
-                        currentColor = groundColor;
-                    }
-
-                    minDistance = dis;
-
                     nextOrigin = rayOrigin + rayDirection * dis;
-                    nextDirection = p.normal;
+                    nextNormal = p.normal;
+                    nextMaterial = p.material;
+                    minDistance = dis;
                 }
             }
         }
@@ -154,29 +173,41 @@ Vec3 raycast(Vec3 rayOrigin, Vec3 rayDirection, Scene scene)
 
                 if (dis > epsilon && dis < minDistance)
                 {
-                    currentColor = sphereColor;
-
-                    minDistance = dis;
-
                     nextOrigin = rayOrigin + rayDirection * dis;
-                    nextDirection = nextOrigin - s.center;
+                    nextNormal = nextOrigin - s.center;
+                    nextNormal.normalize();
+                    nextMaterial = s.material;
+                    minDistance = dis;
                 }
             }
         }
 
         if (minDistance != FLT_MAX)
         {
+            // Compute random reflection direction
+            Vec3 adiacentSphereCenter = rayOrigin + nextNormal * 1.2;
+            Vec3 displacement = Vec3(0, 0, 0);
+            displacement.randomize();
+            Vec3 randomDirection = (adiacentSphereCenter + displacement) - rayOrigin;
+            randomDirection.normalize();
+
+            rayDirection = lerp(randomDirection, nextNormal, nextMaterial.reflectance);
             rayOrigin = nextOrigin;
-            rayDirection = nextDirection;
+
+            finalColor = finalColor + nextMaterial.emittedColor * attenuation;
+            attenuation = nextMaterial.reflectedColor * attenuation;
+            previousMaterial = nextMaterial;
+
             minDistance = FLT_MAX;
         }
         else
         {
+            finalColor = finalColor + background.emittedColor * attenuation;
             break;
         }
     }
 
-    return currentColor;
+    return finalColor;
 }
 
 int main(int argc, char** argv)
@@ -191,7 +222,7 @@ int main(int argc, char** argv)
     Vec3 zAxys = Vec3(0, 0, 1);
 
     Camera camera = {};
-    camera.pos = Vec3(0, 10, 1);
+    camera.pos = Vec3(0, 7, 1);
     // Todo: clean camera space setup
     camera.Z = camera.pos;
     camera.Z.normalize();
@@ -199,23 +230,45 @@ int main(int argc, char** argv)
     camera.X.normalize();
     camera.Y = camera.Z.cross(camera.X);
     camera.Y.normalize();
+    camera.pos = camera.pos + Vec3(0, 0, 0.3f);
+
+    Material groundMaterial = {};
+    groundMaterial.reflectedColor = Vec3(0.3f, 0.3f, 0.35f);
+    groundMaterial.reflectance = 0.1f;
+    Material matA = {};
+    matA.reflectedColor = Vec3(0.2f, 0.25f, 0.29f);
+    matA.reflectance = 0.92f;
+    Material matB = {};
+    matB.reflectedColor = Vec3(0.98f, 0.98f, 0.98f);
+    matB.reflectance = 0.2f;
+    Material emitter = {};
+    emitter.emittedColor = Vec3(0.50f, 0.70f, 0.88f);
 
     Plane plane = {};
     plane.normal = Vec3(0, 0, 1);
     plane.distance = 0;
+    plane.material = groundMaterial;
 
     Sphere sphereA = {};
-    sphereA.center = Vec3(0, 0, 1.2f);
+    sphereA.center = Vec3(-1.2f, 0, 1.2f);
     sphereA.radius = 1.0f;
+    sphereA.material = matA;
 
     Sphere sphereB = {};
-    sphereB.center = Vec3(2, 1, 0.6f);
+    sphereB.center = Vec3(1.5f, 1, 0.6f);
     sphereB.radius = 1.0f;
+    sphereB.material = matB;
+
+    Sphere sphereC = {};
+    sphereC.center = Vec3(0, 1.5f, 0);
+    sphereC.radius = 0.45f;
+    sphereC.material = emitter;
 
     Scene scene = {};
     scene.planes.push_back(plane);
     scene.spheres.push_back(sphereA);
     scene.spheres.push_back(sphereB);
+    scene.spheres.push_back(sphereC);
 
     float screenW = 1.0f;
     float screenH = 1.0f;
@@ -227,25 +280,33 @@ int main(int argc, char** argv)
         screenH = (float) height / (float) width;
     }
 
+    uint8_t raysPerPixel = 4;
     for (size_t x = 0; x<width; x++)
     {
         float screenX = (float) x * 2.0f / (float) width - 1.0f;
 	for (size_t y = 0; y<height; y++)
         {
             float screenY = (float) y * 2.0f / (float) height - 1.0f;
-            Vec3 screenP = screenCenter + camera.X * screenX * 0.5f * screenW + camera.Y * screenY * 0.5f * screenH;
+            float xOffset = screenX * 0.5f * screenW;
+            float yOffset = screenY * 0.5f * screenH;
+            Vec3 screenP = screenCenter + camera.X * xOffset + camera.Y * yOffset;
 
             Vec3 rayOrigin = camera.pos;
             Vec3 rayDirection = screenP - rayOrigin;
             rayDirection.normalize();
 
-	    Vec3 pixelColor = raycast(rayOrigin, rayDirection, scene);
-	    framebuffer[x+y*width] = pixelColor;
+            Vec3 pixelColor = Vec3(0, 0, 0);
+            for (uint8_t i = 0; i < raysPerPixel; i++)
+            {
+                pixelColor = pixelColor + raycast(rayOrigin, rayDirection, scene);
+            }
+
+	    framebuffer[x+y*width] = pixelColor / (float)raysPerPixel;
         }
     }
 
     std::ofstream ofs;
-    ofs.open("./out.ppm");
+    ofs.open("./output.ppm");
     ofs << "P6\n" << width << " " << height << "\n255\n";
     for (size_t i = 0; i < height*width; ++i)
     {
