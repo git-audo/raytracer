@@ -280,24 +280,27 @@ int main(int argc, char** argv)
         screenH = (float) height / (float) width;
     }
 
-    uint8_t raysPerPixel = 4;
+    uint8_t raysPerPixel = 64;
     for (size_t x = 0; x<width; x++)
     {
         float screenX = (float) x * 2.0f / (float) width - 1.0f;
 	for (size_t y = 0; y<height; y++)
         {
             float screenY = (float) y * 2.0f / (float) height - 1.0f;
-            float xOffset = screenX * 0.5f * screenW;
-            float yOffset = screenY * 0.5f * screenH;
-            Vec3 screenP = screenCenter + camera.X * xOffset + camera.Y * yOffset;
-
-            Vec3 rayOrigin = camera.pos;
-            Vec3 rayDirection = screenP - rayOrigin;
-            rayDirection.normalize();
 
             Vec3 pixelColor = Vec3(0, 0, 0);
             for (uint8_t i = 0; i < raysPerPixel; i++)
             {
+                float xAntialiasJitter = (randomFloat() * 2 - 1) * (0.5f / (float)width);
+                float yAntialiasJitter = (randomFloat() * 2 - 1) * (0.5f / (float)height);
+                float xOffset = screenX * 0.5f * screenW + xAntialiasJitter;
+                float yOffset = screenY * 0.5f * screenH + yAntialiasJitter;
+                Vec3 screenP = screenCenter + camera.X * xOffset + camera.Y * yOffset;
+
+                Vec3 rayOrigin = camera.pos;
+                Vec3 rayDirection = screenP - rayOrigin;
+                rayDirection.normalize();
+
                 pixelColor = pixelColor + raycast(rayOrigin, rayDirection, scene);
             }
 
