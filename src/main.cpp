@@ -29,12 +29,10 @@ struct Vec3
         return true;
     }
 
-    void print() { printf("X: %f  Y: %f  Z: %f\n", x, y, z); };
-
-    float len() { return std::sqrt(x*x + y*y + z*z); };
+    float length() { return std::sqrt(x*x + y*y + z*z); };
 
     void normalize() {
-	float l = len();
+        float l = length();
         if (l != 0)
         {
             x /= l;
@@ -152,17 +150,16 @@ Vec3 raycast(Vec3 rayOrigin, Vec3 rayDirection, Scene scene)
 
         for (Sphere s : scene.spheres)
         {
-            // Understand why we have to translate rayO to compensate for sphere not in the origin
+            // we translate the rayOrigin to compensate for a sphere not in the origin
             Vec3 relativeRayOrigin = rayOrigin - s.center;
             float a = rayDirection.inner(rayDirection);
             float b = (2 * rayDirection.inner(relativeRayOrigin));
             float c = relativeRayOrigin.inner(relativeRayOrigin) - s.radius * s.radius;
 
-            float squaredTerm = b * b -  4.0f * a * c;
-            if (squaredTerm >= 0)
+            float discriminant = b * b -  4.0f * a * c;
+            if (discriminant >= 0)
             {
-                // Todo: fix naming
-                float squared = sqrt(squaredTerm);
+                float squared = sqrt(discriminant);
                 float posNum = - b + squared;
                 float negNum = - b - squared;
 
@@ -212,10 +209,10 @@ Vec3 raycast(Vec3 rayOrigin, Vec3 rayDirection, Scene scene)
 
 int main(int argc, char** argv)
 {
-    const int width   = 1280;
-    const int height  = 720;
+    const int WIDTH   = 1280;
+    const int HEIGHT  = 720;
 
-    Vec3* framebuffer = (Vec3*) malloc(width * height * sizeof(Vec3));
+    Vec3* framebuffer = new Vec3[WIDTH * HEIGHT];
 
     Vec3 xAxys = Vec3(1, 0, 0);
     Vec3 yAxys = Vec3(0, 1, 0);
@@ -275,21 +272,21 @@ int main(int argc, char** argv)
     float focalDistance = 1.0f;
     Vec3 screenCenter = camera.pos - (camera.Z * focalDistance);
 
-    float pixelW = (screenW / (float)width);
-    float pixelH = (screenH / (float)height);
+    float pixelW = (screenW / (float)WIDTH);
+    float pixelH = (screenH / (float)HEIGHT);
 
-    if (width > height)
+    if (WIDTH > HEIGHT)
     {
-        screenH = (float) height / (float) width;
+        screenH = (float) HEIGHT / (float) WIDTH;
     }
 
     uint8_t raysPerPixel = 4;
-    for (size_t x = 0; x<width; x++)
+    for (size_t x = 0; x<WIDTH; x++)
     {
-        float screenX = (float) x * 2.0f / (float) width - 1.0f;
-	for (size_t y = 0; y<height; y++)
+        float screenX = (float) x * 2.0f / (float) WIDTH - 1.0f;
+        for (size_t y = 0; y<HEIGHT; y++)
         {
-            float screenY = (float) y * 2.0f / (float) height - 1.0f;
+            float screenY = (float) y * 2.0f / (float) HEIGHT - 1.0f;
 
             Vec3 pixelColor = Vec3(0, 0, 0);
             for (uint8_t i = 0; i < raysPerPixel; i++)
@@ -307,18 +304,18 @@ int main(int argc, char** argv)
                 pixelColor = pixelColor + raycast(rayOrigin, rayDirection, scene);
             }
 
-	    framebuffer[x+y*width] = pixelColor / (float)raysPerPixel;
+            framebuffer[x+y*WIDTH] = pixelColor / (float)raysPerPixel;
         }
     }
 
     std::ofstream ofs;
     ofs.open("./output.ppm");
-    ofs << "P6\n" << width << " " << height << "\n255\n";
-    for (size_t i = 0; i < height*width; ++i)
+    ofs << "P6\n" << WIDTH << " " << HEIGHT << "\n255\n";
+    for (size_t i = 0; i < HEIGHT*WIDTH; ++i)
     {
-	ofs << (char)(255 * framebuffer[i].x);
-	ofs << (char)(255 * framebuffer[i].y);
-	ofs << (char)(255 * framebuffer[i].z);
+        ofs << (char)(255 * framebuffer[i].x);
+        ofs << (char)(255 * framebuffer[i].y);
+        ofs << (char)(255 * framebuffer[i].z);
     }
     ofs.close();
 
