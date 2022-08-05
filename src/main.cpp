@@ -86,6 +86,14 @@ struct Material
     Material() {};
 };
 
+struct Ray {
+    Vec3 origin;
+    Vec3 direction;
+
+    Ray() {};
+    Ray(Vec3 o, Vec3 d) : origin(o), direction(d) {};
+};
+
 struct Plane
 {
     Vec3  normal;
@@ -94,6 +102,23 @@ struct Plane
 
     Plane(Vec3 n, float d) : normal(n), distance(d) {};
     Plane() {};
+
+    bool intersectsRay(Ray& r, float& d) {
+        float numerator   = - distance - normal.inner(r.origin);
+        float denominator = normal.inner(r.direction);
+
+        float epsilon = 0.0001f;
+        if (denominator < -epsilon || denominator > epsilon)
+        {
+            d = numerator / denominator;
+            if (d > 0 && d < FLT_MAX)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    };
 };
 
 struct Sphere
@@ -104,6 +129,33 @@ struct Sphere
 
     Sphere(Vec3 c, float r) : center(c), radius(r) {};
     Sphere() {};
+
+    bool intersectsRay(Ray& r, float& d) {
+        float a = r.direction.inner(r.direction);
+        float b = (2 * r.direction.inner(r.origin));
+        float c = r.origin.inner(r.origin) - radius * radius;
+
+        float discriminant = b * b -  4.0f * a * c;
+        if (discriminant >= 0)
+        {
+            float squared = sqrt(discriminant);
+            float posNum = - b + squared;
+            float negNum = - b - squared;
+
+            float posRoot = posNum / 2 * a;
+            float negRoot = negNum / 2 * a;
+
+            d = posRoot < negRoot ? posRoot : negRoot;
+
+            float epsilon = 0.0001f;
+            if (d > epsilon)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    };
 };
 
 struct Scene
@@ -112,7 +164,7 @@ struct Scene
     std::vector<Sphere> spheres;
 };
 
-Vec3 raycast(Vec3 rayOrigin, Vec3 rayDirection, Scene scene)
+Vec3 raycast(Ray ray, Scene& scene)
 {
     Material background = {};
     background.emittedColor = Vec3(0.6f, 0.6f, 0.9f);
@@ -132,64 +184,43 @@ Vec3 raycast(Vec3 rayOrigin, Vec3 rayDirection, Scene scene)
     {
         for (Plane p : scene.planes)
         {
-            float numerator   = - p.distance - p.normal.inner(rayOrigin);
-            float denominator = p.normal.inner(rayDirection);
-
-            if (denominator < -epsilon || denominator > epsilon)
+            float distance = 0;
+            if (p.intersectsRay(ray, distance))
             {
-                float dis = numerator / denominator;
-                if (dis > 0 && dis < FLT_MAX)
-                {
-                    nextOrigin = rayOrigin + rayDirection * dis;
-                    nextNormal = p.normal;
-                    nextMaterial = p.material;
-                    minDistance = dis;
-                }
+                nextOrigin = ray.origin + ray.direction * distance;
+                nextNormal = p.normal;
+                nextMaterial = p.material;
+                minDistance = distance;
             }
         }
 
         for (Sphere s : scene.spheres)
         {
             // we translate the rayOrigin to compensate for a sphere not in the origin
-            Vec3 relativeRayOrigin = rayOrigin - s.center;
-            float a = rayDirection.inner(rayDirection);
-            float b = (2 * rayDirection.inner(relativeRayOrigin));
-            float c = relativeRayOrigin.inner(relativeRayOrigin) - s.radius * s.radius;
+            Vec3 relativeRayOrigin = ray.origin - s.center;
+            Ray r = Ray(relativeRayOrigin, ray.direction);
 
-            float discriminant = b * b -  4.0f * a * c;
-            if (discriminant >= 0)
-            {
-                float squared = sqrt(discriminant);
-                float posNum = - b + squared;
-                float negNum = - b - squared;
-
-                float posRoot = posNum / 2 * a;
-                float negRoot = negNum / 2 * a;
-
-                float dis = posRoot < negRoot ? posRoot : negRoot;
-
-                if (dis > epsilon && dis < minDistance)
-                {
-                    nextOrigin = rayOrigin + rayDirection * dis;
-                    nextNormal = nextOrigin - s.center;
-                    nextNormal.normalize();
-                    nextMaterial = s.material;
-                    minDistance = dis;
-                }
+            float distance = 0;
+            if (s.intersectsRay(r, distance) && distance < minDistance) {
+                nextOrigin = ray.origin + ray.direction * distance;
+                nextNormal = nextOrigin - s.center;
+                nextNormal.normalize();
+                nextMaterial = s.material;
+                minDistance = distance;
             }
         }
 
         if (minDistance != FLT_MAX)
         {
             // Compute random reflection direction
-            Vec3 adiacentSphereCenter = rayOrigin + nextNormal * 1.2;
+            Vec3 adiacentSphereCenter = ray.origin + nextNormal * 1.2;
             Vec3 displacement = Vec3(0, 0, 0);
             displacement.randomize();
-            Vec3 randomDirection = (adiacentSphereCenter + displacement) - rayOrigin;
+            Vec3 randomDirection = (adiacentSphereCenter + displacement) - ray.origin;
             randomDirection.normalize();
 
-            rayDirection = lerp(randomDirection, nextNormal, nextMaterial.reflectance);
-            rayOrigin = nextOrigin;
+            ray.direction = lerp(randomDirection, nextNormal, nextMaterial.reflectance);
+            ray.origin = nextOrigin;
 
             finalColor = finalColor + nextMaterial.emittedColor * attenuation;
             attenuation = nextMaterial.reflectedColor * attenuation;
@@ -301,7 +332,8 @@ int main(int argc, char** argv)
                 Vec3 rayDirection = screenP - rayOrigin;
                 rayDirection.normalize();
 
-                pixelColor = pixelColor + raycast(rayOrigin, rayDirection, scene);
+                Ray ray = Ray(rayOrigin, rayDirection);
+                pixelColor = pixelColor + raycast(ray, scene);
             }
 
             framebuffer[x+y*WIDTH] = pixelColor / (float)raysPerPixel;
