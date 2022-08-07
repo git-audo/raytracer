@@ -31,14 +31,18 @@ struct Vec3
 
     float length() { return std::sqrt(x*x + y*y + z*z); };
 
-    void normalize() {
+    Vec3 normalize() {
         float l = length();
+        Vec3 v = {};
+
         if (l != 0)
         {
-            x /= l;
-            y /= l;
-            z /= l;
+            v.x = x / l;
+            v.y = y / l;
+            v.z = z / l;
         }
+
+        return v;
     };
 
     void randomize() {
@@ -74,7 +78,11 @@ struct Camera
     Vec3 Y;
     Vec3 Z;
 
-    Camera() {};
+    Camera(Vec3 p, Vec3 zAxys) : pos(p) {
+        Z = pos.normalize();
+        X = Z.cross(zAxys).normalize();
+        Y = Z.cross(X).normalize();
+    };
 };
 
 struct Material
@@ -170,7 +178,6 @@ Vec3 raycast(Ray ray, Scene& scene)
     background.emittedColor = Vec3(0.6f, 0.6f, 0.9f);
 
     float minDistance = FLT_MAX;
-    float epsilon = 0.0001f;
     Vec3 finalColor = {};
     Vec3 attenuation = Vec3(1, 1, 1);
 
@@ -201,10 +208,10 @@ Vec3 raycast(Ray ray, Scene& scene)
             Ray r = Ray(relativeRayOrigin, ray.direction);
 
             float distance = 0;
-            if (s.intersectsRay(r, distance) && distance < minDistance) {
+            if (s.intersectsRay(r, distance) && distance < minDistance)
+            {
                 nextOrigin = ray.origin + ray.direction * distance;
-                nextNormal = nextOrigin - s.center;
-                nextNormal.normalize();
+                nextNormal = (nextOrigin - s.center).normalize();
                 nextMaterial = s.material;
                 minDistance = distance;
             }
@@ -216,8 +223,7 @@ Vec3 raycast(Ray ray, Scene& scene)
             Vec3 adiacentSphereCenter = ray.origin + nextNormal * 1.2;
             Vec3 displacement = Vec3(0, 0, 0);
             displacement.randomize();
-            Vec3 randomDirection = (adiacentSphereCenter + displacement) - ray.origin;
-            randomDirection.normalize();
+            Vec3 randomDirection = ((adiacentSphereCenter + displacement) - ray.origin).normalize();
 
             ray.direction = lerp(randomDirection, nextNormal, nextMaterial.reflectance);
             ray.origin = nextOrigin;
@@ -249,15 +255,7 @@ int main(int argc, char** argv)
     Vec3 yAxys = Vec3(0, 1, 0);
     Vec3 zAxys = Vec3(0, 0, 1);
 
-    Camera camera = {};
-    camera.pos = Vec3(0, 7, 1);
-    // Todo: clean camera space setup
-    camera.Z = camera.pos;
-    camera.Z.normalize();
-    camera.X = camera.Z.cross(zAxys);
-    camera.X.normalize();
-    camera.Y = camera.Z.cross(camera.X);
-    camera.Y.normalize();
+    Camera camera = Camera(Vec3(0, 7, 1), zAxys);
     camera.pos = camera.pos + Vec3(0, 0, 0.3f);
 
     Material groundMaterial = {};
@@ -311,7 +309,9 @@ int main(int argc, char** argv)
         screenH = (float) HEIGHT / (float) WIDTH;
     }
 
+    Ray ray = {};
     uint8_t raysPerPixel = 4;
+
     for (size_t x = 0; x<WIDTH; x++)
     {
         float screenX = (float) x * 2.0f / (float) WIDTH - 1.0f;
@@ -329,10 +329,9 @@ int main(int argc, char** argv)
                 Vec3 screenP = screenCenter + camera.X * xOffset + camera.Y * yOffset;
 
                 Vec3 rayOrigin = camera.pos;
-                Vec3 rayDirection = screenP - rayOrigin;
-                rayDirection.normalize();
+                Vec3 rayDirection = (screenP - rayOrigin).normalize();
 
-                Ray ray = Ray(rayOrigin, rayDirection);
+                ray = Ray(rayOrigin, rayDirection);
                 pixelColor = pixelColor + raycast(ray, scene);
             }
 
