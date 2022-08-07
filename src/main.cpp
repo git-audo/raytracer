@@ -43,13 +43,7 @@ struct Vec3
         }
 
         return v;
-    };
-
-    void randomize() {
-        x = randomFloat() * 2.0f - 1;
-        y = randomFloat() * 2.0f - 1;
-        z = randomFloat() * 2.0f - 1;
-    };
+    }
 
     Vec3 cross(const Vec3& v) {
         Vec3 result = {};
@@ -62,6 +56,16 @@ struct Vec3
 
     float inner(const Vec3& v) {
         return x * v.x + y * v.y + z * v.z;
+    }
+
+    static Vec3 randomized() {
+        Vec3 v = {};
+
+        v.x = randomFloat() * 2.0f - 1;
+        v.y = randomFloat() * 2.0f - 1;
+        v.z = randomFloat() * 2.0f - 1;
+
+        return v;
     }
 };
 
@@ -178,8 +182,8 @@ Vec3 raycast(Ray ray, Scene& scene)
     background.emittedColor = Vec3(0.6f, 0.6f, 0.9f);
 
     float minDistance = FLT_MAX;
-    Vec3 finalColor = {};
     Vec3 attenuation = Vec3(1, 1, 1);
+    Vec3 finalColor = {};
 
     Material previousMaterial = {};
     Material nextMaterial = background;
@@ -219,11 +223,8 @@ Vec3 raycast(Ray ray, Scene& scene)
 
         if (minDistance != FLT_MAX)
         {
-            // Compute random reflection direction
             Vec3 adiacentSphereCenter = ray.origin + nextNormal * 1.2;
-            Vec3 displacement = Vec3(0, 0, 0);
-            displacement.randomize();
-            Vec3 randomDirection = ((adiacentSphereCenter + displacement) - ray.origin).normalize();
+            Vec3 randomDirection = ((adiacentSphereCenter + Vec3::randomized()) - ray.origin).normalize();
 
             ray.direction = lerp(randomDirection, nextNormal, nextMaterial.reflectance);
             ray.origin = nextOrigin;
@@ -310,7 +311,7 @@ int main(int argc, char** argv)
     }
 
     Ray ray = {};
-    uint8_t raysPerPixel = 4;
+    uint8_t raysPerPixel = 8;
 
     for (size_t x = 0; x<WIDTH; x++)
     {
