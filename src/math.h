@@ -1,3 +1,4 @@
+#pragma once
 
 float randomFloat()
 {
@@ -43,7 +44,7 @@ struct Vec3
     Vec3 cross(const Vec3& v) {
         Vec3 result = {};
         result.x = y * v.z - z * v.y;
-        result.y = x * v.z - z * v.x;
+        result.y = z * v.x - x * v.z;
         result.z = x * v.y - y * v.x;
 
         return result;
@@ -68,3 +69,11 @@ Vec3 lerp(Vec3 start, Vec3 end, float t)
 {
     return start * (1 - t) + end * t;
 }
+
+struct Ray {
+    Vec3 origin;
+    Vec3 direction;
+
+    Ray() {};
+    Ray(Vec3 o, Vec3 d) : origin(o), direction(d) {};
+};
