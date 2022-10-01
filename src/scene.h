@@ -76,28 +76,24 @@ struct Sphere
 class Scene
 {
 public:
-    Scene() {};
-    ~Scene() {};
-
-    std::vector<Plane>  planes;
-    std::vector<Sphere> spheres;
-
-    void setup()
-    {
+    Scene() {
         Material groundMaterial = {};
-        groundMaterial.reflectedColor = Vec3(0.3f, 0.3f, 0.35f);
-        groundMaterial.reflectance = 0.1f;
+        groundMaterial.reflectedColor = Vec3(0.2f, 0.3f, 0.5f);
+        groundMaterial.reflectance = 0.2f;
         Material matA = {};
-        matA.reflectedColor = Vec3(0.2f, 0.25f, 0.29f);
+        matA.reflectedColor = Vec3(0.15f, 0.15f, 0.19f);
         matA.reflectance = 0.92f;
         Material matB = {};
         matB.reflectedColor = Vec3(0.98f, 0.98f, 0.98f);
         matB.reflectance = 0.2f;
         Material emitter = {};
         emitter.emittedColor = Vec3(0.50f, 0.70f, 0.88f);
+        Material matD = {};
+        matD.reflectedColor = Vec3(0.58f, 0.28f, 0.28f);
+        matD.reflectance = 0.2f;
 
         Plane plane = {};
-        plane.normal = Vec3(0, 0, 1);
+        plane.normal = Vec3(0, 0.02f, 1.0f);
         plane.distance = 0;
         plane.material = groundMaterial;
 
@@ -116,9 +112,20 @@ public:
         sphereC.radius = 0.45f;
         sphereC.material = emitter;
 
+        Sphere sphereD = {};
+        sphereD.center = Vec3(-1.5f, -5.2f, 0);
+        sphereD.radius = 4.0f;
+        sphereD.material = matD;
+
         planes.push_back(plane);
         spheres.push_back(sphereA);
         spheres.push_back(sphereB);
         spheres.push_back(sphereC);
+        spheres.push_back(sphereD);
     };
+
+    ~Scene() {};
+
+    std::vector<Plane>  planes;
+    std::vector<Sphere> spheres;
 };

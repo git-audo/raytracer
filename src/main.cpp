@@ -15,7 +15,8 @@ struct Camera
     Vec3 Y;
     Vec3 Z;
 
-    Camera(Vec3 p, Vec3 zAxys) : pos(p) {
+    Camera(Vec3 p, Vec3 zAxys) : pos(p)
+    {
         Z = pos.normalize();
         X = Z.cross(zAxys).normalize();
         Y = Z.cross(X).normalize();
@@ -67,9 +68,9 @@ Vec3 raycast(Ray ray, Scene& scene)
             }
         }
 
-        if (minDistance != FLT_MAX)
+        if (minDistance < FLT_MAX)
         {
-            Vec3 adiacentSphereCenter = ray.origin + nextNormal * 1.2;
+            Vec3 adiacentSphereCenter = ray.origin + nextNormal;
             Vec3 randomDirection = ((adiacentSphereCenter + Vec3::randomized()) - ray.origin).normalize();
 
             ray.direction = lerp(randomDirection, nextNormal, nextMaterial.reflectance);
@@ -103,10 +104,9 @@ int main(int argc, char** argv)
     Vec3 zAxys = Vec3(0, 0, 1);
 
     Camera camera = Camera(Vec3(0, 7, 1), zAxys);
-    camera.pos = camera.pos + Vec3(0, 0, 0.3f);
+    camera.pos = camera.pos + Vec3(0, 0, 0.8f);
 
     Scene scene;
-    scene.setup();
 
     float screenW = 1.0f;
     float screenH = 1.0f;
@@ -118,18 +118,18 @@ int main(int argc, char** argv)
 
     if (WIDTH > HEIGHT)
     {
-        screenH = (float) HEIGHT / (float) WIDTH;
+        screenH = (float)HEIGHT / (float)WIDTH;
     }
 
     Ray ray = {};
-    uint8_t raysPerPixel = 8;
+    uint8_t raysPerPixel = 255;
 
-    for (size_t x = 0; x<WIDTH; x++)
+    for (size_t x = 0; x < WIDTH; x++)
     {
-        float screenX = (float) x * 2.0f / (float) WIDTH - 1.0f;
-        for (size_t y = 0; y<HEIGHT; y++)
+        float screenX = (float)x * 2.0f / (float)WIDTH - 1.0f;
+        for (size_t y = 0; y < HEIGHT; y++)
         {
-            float screenY = (float) y * 2.0f / (float) HEIGHT - 1.0f;
+            float screenY = (float)y * 2.0f / (float)HEIGHT - 1.0f;
 
             Vec3 pixelColor = Vec3(0, 0, 0);
             for (uint8_t i = 0; i < raysPerPixel; i++)
@@ -154,11 +154,11 @@ int main(int argc, char** argv)
     std::ofstream ofs;
     ofs.open("./output.ppm");
     ofs << "P6\n" << WIDTH << " " << HEIGHT << "\n255\n";
-    for (size_t i = 0; i < HEIGHT*WIDTH; ++i)
+    for (size_t i = 0; i < HEIGHT * WIDTH; ++i)
     {
-        ofs << (char)(255 * framebuffer[i].x);
-        ofs << (char)(255 * framebuffer[i].y);
-        ofs << (char)(255 * framebuffer[i].z);
+        ofs << (char)(255 * std::sqrt(framebuffer[i].x));
+        ofs << (char)(255 * std::sqrt(framebuffer[i].y));
+        ofs << (char)(255 * std::sqrt(framebuffer[i].z));
     }
     ofs.close();
 
