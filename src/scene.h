@@ -73,6 +73,34 @@ struct Sphere
     };
 };
 
+struct RectYZ
+{
+    float x;
+    float y0, z0, y1, z1;
+    Vec3 normal;
+    Material material;
+
+    RectYZ(float x, float y0, float z0, float y1, float z1) : x(x), y0(y0), z0(z0), y1(y1), z1(z1) {
+        normal = Vec3(1, 0, 0);
+    };
+
+    bool intersectsRay(Ray& r, float& d) {
+        d = (x - r.origin.x) / r.direction.x;
+        if (d < 0 || d > FLT_MAX){
+            return false;
+        }
+
+        float y = r.origin.y + d * r.direction.y;
+        float z = r.origin.z + d * r.direction.z;
+
+        if (y < y0 || y > y1 || z < z0 || z > z1) {
+            return false;
+        }
+
+        return true;
+    };
+};
+
 class Scene
 {
 public:
@@ -88,6 +116,8 @@ public:
         matB.reflectance = 0.2f;
         Material emitter = {};
         emitter.emittedColor = Vec3(0.50f, 0.70f, 0.88f);
+        Material greenEmitter = {};
+        greenEmitter.emittedColor = Vec3(0.50f, 0.70f, 0.58f);
         Material matD = {};
         matD.reflectedColor = Vec3(0.58f, 0.28f, 0.28f);
         matD.reflectance = 0.2f;
@@ -107,25 +137,36 @@ public:
         sphereB.radius = 1.0f;
         sphereB.material = matB;
 
-        Sphere sphereC = {};
-        sphereC.center = Vec3(0, 1.5f, 0);
-        sphereC.radius = 0.45f;
-        sphereC.material = emitter;
-
         Sphere sphereD = {};
         sphereD.center = Vec3(-1.5f, -5.2f, 0);
         sphereD.radius = 4.0f;
         sphereD.material = matD;
 
+        Sphere lightA = {};
+        lightA.center = Vec3(0, 1.5f, 0);
+        lightA.radius = 0.45f;
+        lightA.material = emitter;
+
+        Sphere lightB = {};
+        lightB.center = Vec3(1.2f, 0.5f, 2.2f);
+        lightB.radius = 0.35f;
+        lightB.material = greenEmitter;
+
+        RectYZ rect = RectYZ(2, 1.0f, 1.5f, 3.0f, 4.5f);
+        rect.material = emitter;
+
         planes.push_back(plane);
         spheres.push_back(sphereA);
         spheres.push_back(sphereB);
-        spheres.push_back(sphereC);
         spheres.push_back(sphereD);
+        spheres.push_back(lightA);
+        spheres.push_back(lightB);
+        rects.push_back(rect);
     };
 
     ~Scene() {};
 
     std::vector<Plane>  planes;
     std::vector<Sphere> spheres;
+    std::vector<RectYZ> rects;
 };
