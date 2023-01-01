@@ -1,5 +1,7 @@
 #pragma once
 
+#include <map>
+
 struct Material
 {
     Vec3 emittedColor;
@@ -103,79 +105,63 @@ struct RectYZ
 
 class Scene
 {
-public:
-    Scene() {
-        if (!loadFromFile()) {
-            // Handle scene file error
-        };
-    };
-
-    ~Scene() {};
-
+private:
     bool loadFromFile() {
         std::ifstream sceneFile("data/scene.txt");
         if (!sceneFile.is_open())
             return false;
 
         std::string objectsCount;
-        sceneFile >> objectsCount;
-
-        std::cout << objectsCount << std::endl;
-
-        std::string line;
         std::string objectType;
-        std::string x, y, z;
+        std::string x, y, z, m;
 
-        // remove materials
-        Material groundMaterial = {};
-        groundMaterial.reflectedColor = Vec3(0.2f, 0.3f, 0.5f);
-        groundMaterial.reflectance = 0.2f;
-        Material matA = {};
-        matA.reflectedColor = Vec3(0.15f, 0.15f, 0.19f);
-        matA.reflectance = 0.92f;
-        Material matB = {};
-        matB.reflectedColor = Vec3(0.98f, 0.98f, 0.98f);
-        matB.reflectance = 0.2f;
-        Material emitter = {};
-        emitter.emittedColor = Vec3(0.50f, 0.70f, 0.88f);
-        Material greenEmitter = {};
-        greenEmitter.emittedColor = Vec3(0.50f, 0.70f, 0.58f);
-        Material matD = {};
-        matD.reflectedColor = Vec3(0.58f, 0.28f, 0.28f);
-        matD.reflectance = 0.2f;
-
+        sceneFile >> objectsCount;
 
         while ( !sceneFile.eof() ) {
             sceneFile >> objectType;
 
+            if (!objectType.compare(std::string("MAT"))) {
+                std::string r;
+                sceneFile >> m >> x >> y >> z >> r;
+
+                Material material = {};
+                material.reflectedColor = Vec3(stof(x), stof(y), stof(z));
+                material.reflectance = stof(r);
+
+                sceneFile >> x >> y >> z;
+                material.emittedColor = Vec3(stof(x), stof(y), stof(z));
+
+                materials.insert(std::pair<int, Material>(stoi(m), material));
+            }
+
             if (!objectType.compare(std::string("PLANE"))) {
                 std::string d;
-                sceneFile >> x >> y >> z >> d;
+                sceneFile >> x >> y >> z >> d >> m;
 
                 Plane plane = {};
                 plane.normal = Vec3(stof(x), stof(y), stof(z));
                 plane.distance = stof(d);
-                plane.material = groundMaterial;
+                plane.material = materials.at(stoi(m));
                 planes.push_back(plane);
             }
 
             if (!objectType.compare(std::string("SPHERE"))) {
                 std::string r;
-                sceneFile >> x >> y >> z >> r;
+                sceneFile >> x >> y >> z >> r >> m;
 
                 Sphere sphere = {};
                 sphere.center = Vec3(stof(x), stof(y), stof(z));
                 sphere.radius = stof(r);
-                sphere.material = matA;
+                sphere.material = materials.at(stoi(m));
                 spheres.push_back(sphere);
             }
 
             if (!objectType.compare(std::string("RECT"))) {
                 std::string x1, y1, d;
-                sceneFile >> x >> y >> x1 >> y1 >> d;
+                sceneFile >> x >> y >> x1 >> y1 >> d >> m;
 
                 RectYZ rect = RectYZ(stof(d), Vec2(stof(x), stof(y)), Vec2(stof(x1), stof(y1)));
-                rect.material = emitter;
+                rect.material = materials.at(stoi(m));
                 rects.push_back(rect);
             }
 
@@ -185,7 +171,18 @@ public:
         return true;
     }
 
+public:
+    Scene() {
+        if (!loadFromFile()) {
+            std::cerr << "ERROR: could not open the scene file\n";
+            std::abort();
+        };
+    };
+
+    ~Scene() {};
+
     std::vector<Plane>  planes;
     std::vector<Sphere> spheres;
     std::vector<RectYZ> rects;
+    std::map<int, Material> materials;
 };
