@@ -70,6 +70,14 @@ Vec3 lerp(Vec3 start, Vec3 end, float t)
     return start * (1 - t) + end * t;
 }
 
+struct Vec2
+{
+    float u=0, v=0;
+
+Vec2(float u, float v) : u(u), v(v) {};
+    Vec2() {};
+};
+
 struct Ray {
     Vec3 origin;
     Vec3 direction;

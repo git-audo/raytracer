@@ -76,11 +76,11 @@ struct Sphere
 struct RectYZ
 {
     float x;
-    float y0, z0, y1, z1;
+    Vec2 vertexA, vertexB;
     Vec3 normal;
     Material material;
 
-    RectYZ(float x, float y0, float z0, float y1, float z1) : x(x), y0(y0), z0(z0), y1(y1), z1(z1) {
+    RectYZ(float x, Vec2 vertexA, Vec2 vertexB) : x(x), vertexA(vertexA), vertexB(vertexB) {
         normal = Vec3(1, 0, 0);
     };
 
@@ -93,7 +93,7 @@ struct RectYZ
         float y = r.origin.y + d * r.direction.y;
         float z = r.origin.z + d * r.direction.z;
 
-        if (y < y0 || y > y1 || z < z0 || z > z1) {
+        if (y < vertexA.u || y > vertexB.u || z < vertexA.v || z > vertexB.v) {
             return false;
         }
 
@@ -105,6 +105,28 @@ class Scene
 {
 public:
     Scene() {
+        if (!loadFromFile()) {
+            // Handle scene file error
+        };
+    };
+
+    ~Scene() {};
+
+    bool loadFromFile() {
+        std::ifstream sceneFile("data/scene.txt");
+        if (!sceneFile.is_open())
+            return false;
+
+        std::string objectsCount;
+        sceneFile >> objectsCount;
+
+        std::cout << objectsCount << std::endl;
+
+        std::string line;
+        std::string objectType;
+        std::string x, y, z;
+
+        // remove materials
         Material groundMaterial = {};
         groundMaterial.reflectedColor = Vec3(0.2f, 0.3f, 0.5f);
         groundMaterial.reflectance = 0.2f;
@@ -122,49 +144,46 @@ public:
         matD.reflectedColor = Vec3(0.58f, 0.28f, 0.28f);
         matD.reflectance = 0.2f;
 
-        Plane plane = {};
-        plane.normal = Vec3(0, 0.02f, 1.0f);
-        plane.distance = 0;
-        plane.material = groundMaterial;
 
-        Sphere sphereA = {};
-        sphereA.center = Vec3(-1.2f, 0, 1.2f);
-        sphereA.radius = 1.0f;
-        sphereA.material = matA;
+        while ( !sceneFile.eof() ) {
+            sceneFile >> objectType;
 
-        Sphere sphereB = {};
-        sphereB.center = Vec3(1.5f, 1, 0.6f);
-        sphereB.radius = 1.0f;
-        sphereB.material = matB;
+            if (!objectType.compare(std::string("PLANE"))) {
+                std::string d;
+                sceneFile >> x >> y >> z >> d;
 
-        Sphere sphereD = {};
-        sphereD.center = Vec3(-1.5f, -5.2f, 0);
-        sphereD.radius = 4.0f;
-        sphereD.material = matD;
+                Plane plane = {};
+                plane.normal = Vec3(stof(x), stof(y), stof(z));
+                plane.distance = stof(d);
+                plane.material = groundMaterial;
+                planes.push_back(plane);
+            }
 
-        Sphere lightA = {};
-        lightA.center = Vec3(0, 1.5f, 0);
-        lightA.radius = 0.45f;
-        lightA.material = emitter;
+            if (!objectType.compare(std::string("SPHERE"))) {
+                std::string r;
+                sceneFile >> x >> y >> z >> r;
 
-        Sphere lightB = {};
-        lightB.center = Vec3(1.2f, 0.5f, 2.2f);
-        lightB.radius = 0.35f;
-        lightB.material = greenEmitter;
+                Sphere sphere = {};
+                sphere.center = Vec3(stof(x), stof(y), stof(z));
+                sphere.radius = stof(r);
+                sphere.material = matA;
+                spheres.push_back(sphere);
+            }
 
-        RectYZ rect = RectYZ(2, 1.0f, 1.5f, 3.0f, 4.5f);
-        rect.material = emitter;
+            if (!objectType.compare(std::string("RECT"))) {
+                std::string x1, y1, d;
+                sceneFile >> x >> y >> x1 >> y1 >> d;
 
-        planes.push_back(plane);
-        spheres.push_back(sphereA);
-        spheres.push_back(sphereB);
-        spheres.push_back(sphereD);
-        spheres.push_back(lightA);
-        spheres.push_back(lightB);
-        rects.push_back(rect);
-    };
+                RectYZ rect = RectYZ(stof(d), Vec2(stof(x), stof(y)), Vec2(stof(x1), stof(y1)));
+                rect.material = emitter;
+                rects.push_back(rect);
+            }
 
-    ~Scene() {};
+            objectType.clear();
+        }
+
+        return true;
+    }
 
     std::vector<Plane>  planes;
     std::vector<Sphere> spheres;
