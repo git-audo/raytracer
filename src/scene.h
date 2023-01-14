@@ -15,7 +15,7 @@ struct Plane
 {
     Vec3  normal;
     float distance;
-    Material material;
+    Material* material;
 
     Plane(Vec3 n, float d) : normal(n), distance(d) {};
     Plane() {};
@@ -42,7 +42,7 @@ struct Sphere
 {
     Vec3  center;
     float radius;
-    Material material;
+    Material* material;
 
     Sphere(Vec3 c, float r) : center(c), radius(r) {};
     Sphere() {};
@@ -80,7 +80,7 @@ struct RectYZ
     float x;
     Vec2 vertexA, vertexB;
     Vec3 normal;
-    Material material;
+    Material* material;
 
     RectYZ(float x, Vec2 vertexA, Vec2 vertexB) : x(x), vertexA(vertexA), vertexB(vertexB) {
         normal = Vec3(1, 0, 0);
@@ -138,7 +138,7 @@ private:
                 Plane plane = {};
                 plane.normal = Vec3(stof(x), stof(y), stof(z));
                 plane.distance = stof(d);
-                plane.material = materials.at(stoi(m));
+                plane.material = &(materials.at(stoi(m)));
                 planes.push_back(plane);
             }
 
@@ -149,7 +149,7 @@ private:
                 Sphere sphere = {};
                 sphere.center = Vec3(stof(x), stof(y), stof(z));
                 sphere.radius = stof(r);
-                sphere.material = materials.at(stoi(m));
+                sphere.material = &(materials.at(stoi(m)));
                 spheres.push_back(sphere);
             }
 
@@ -158,7 +158,7 @@ private:
                 sceneFile >> x >> y >> x1 >> y1 >> d >> m;
 
                 RectYZ rect = RectYZ(stof(d), Vec2(stof(x), stof(y)), Vec2(stof(x1), stof(y1)));
-                rect.material = materials.at(stoi(m));
+                rect.material = &(materials.at(stoi(m)));
                 rects.push_back(rect);
             }
 
@@ -185,6 +185,5 @@ public:
     std::vector<Plane>  planes;
     std::vector<Sphere> spheres;
     std::vector<RectYZ> rects;
-    // TODO use map of shared pointers instead of Material
     std::map<int, Material> materials;
 };
