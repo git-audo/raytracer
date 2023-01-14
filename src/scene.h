@@ -111,13 +111,10 @@ private:
         if (!sceneFile.is_open())
             return false;
 
-        std::string objectsCount;
         std::string objectType;
         std::string x, y, z, m;
 
-        sceneFile >> objectsCount;
-
-        while ( !sceneFile.eof() ) {
+        while (!sceneFile.eof()) {
             sceneFile >> objectType;
 
             if (!objectType.compare(std::string("MAT"))) {
@@ -165,6 +162,10 @@ private:
                 rects.push_back(rect);
             }
 
+            if (!objectType.compare(std::string("#"))) {
+                std::getline(sceneFile, m);
+            }
+
             objectType.clear();
         }
 
@@ -175,7 +176,7 @@ public:
     Scene() {
         if (!loadFromFile()) {
             std::cerr << "ERROR: could not open the scene file\n";
-            std::abort();
+            std::exit(EXIT_FAILURE);
         };
     };
 
@@ -184,5 +185,6 @@ public:
     std::vector<Plane>  planes;
     std::vector<Sphere> spheres;
     std::vector<RectYZ> rects;
+    // TODO use map of shared pointers instead of Material
     std::map<int, Material> materials;
 };

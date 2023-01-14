@@ -1,13 +1,25 @@
-7
-MAT 1 0.2 0.3 0.5 0.2 0 0 0
-MAT 2 0.58 0.28 0.28 0.2 0 0 0
-MAT 3 0.98 0.98 0.98 0.2 0 0 0
-MAT 4 0 0 0 0 0.5 0.7 0.88
-MAT 5 0 0 0 0 0.5 0.7 0.58
-PLANE 0 0.02 1.0 0 1
-SPHERE -1.2 0 1.2 1.0 2
-SPHERE 1.5 1.0 0.6 1.0 3
-SPHERE -1.5 -5.2 0 3.0 3
-SPHERE 0 1.5 0 0.45 4
-SPHERE 1.2 0.5 2.2 0.35 5
-RECT 1.0 1.5 3.0 4.5 2 4
+# This file contains a description of the scene to be rendered.
+# Each material has an ID, a reflected color, a reflectance and an emitted color.
+# Each plane has an normal, a distance from the origin and a material ID.
+# Each sphere has a center, a radius and a material ID.
+# Each rectangle has two corner vertices, a distance from the origin and a material ID.
+
+#    ID - Reflected RGB - R -- Emitted RGB
+MAT  1     0.2  0.3  0.5  0.2    0   0    0
+MAT  2    0.58 0.28 0.28  0.2    0   0    0
+MAT  3    0.98 0.98 0.98  0.2    0   0    0
+MAT  4       0    0    0    0  0.5 0.7 0.88
+MAT  5       0    0    0    0  0.5 0.7 0.58
+
+#      Normal ---- D - Mat ID
+PLANE  0 0.02 1.0  0   1
+
+#       Center -------- R --  Mat ID
+SPHERE  -1.2  2.5  1.2  0.6   2
+SPHERE   1.5  1.0  1.0  1.0   3
+SPHERE  -1.5  0.0  0.0  2.0   3
+SPHERE  -0.5  3.0  0.0  0.4   4
+SPHERE   1.0  2.0  0.8  0.3   5
+
+#     V1 ----- V2 ----- D - Mat ID
+RECT  1.0 1.0  3.0 4.5  2   4

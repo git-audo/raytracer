@@ -12,6 +12,7 @@ int main(int argc, char** argv)
 {
     const int WIDTH  = 1280;
     const int HEIGHT = 720;
+    const uint8_t RAYS_PER_PIXEL = 32;
 
     Vec3* framebuffer = new Vec3[WIDTH * HEIGHT];
 
@@ -19,8 +20,7 @@ int main(int argc, char** argv)
     Vec3 yAxys = Vec3(0, 1, 0);
     Vec3 zAxys = Vec3(0, 0, 1);
 
-    Camera camera = Camera(Vec3(0, 7, 1), zAxys);
-    camera.pos = camera.pos + Vec3(0, 0, 0.8f);
+    Camera camera = Camera(Vec3(0, 7.0f, 1.5f), zAxys);
 
     Scene scene;
 
@@ -38,8 +38,6 @@ int main(int argc, char** argv)
     }
 
     Ray ray = {};
-    uint8_t raysPerPixel = 4;
-
     for (size_t x = 0; x < WIDTH; x++)
     {
         float screenX = (float)x * 2.0f / (float)WIDTH - 1.0f;
@@ -48,7 +46,7 @@ int main(int argc, char** argv)
             float screenY = (float)y * 2.0f / (float)HEIGHT - 1.0f;
 
             Vec3 pixelColor = Vec3(0, 0, 0);
-            for (uint8_t i = 0; i < raysPerPixel; i++)
+            for (uint8_t i = 0; i < RAYS_PER_PIXEL; i++)
             {
                 float xAntialiasJitter = (randomFloat() * 2 - 1) * pixelW;
                 float yAntialiasJitter = (randomFloat() * 2 - 1) * pixelH;
@@ -60,10 +58,10 @@ int main(int argc, char** argv)
                 Vec3 rayDirection = (screenP - rayOrigin).normalize();
 
                 ray = Ray(rayOrigin, rayDirection);
-                pixelColor = pixelColor + raycast(ray, scene);
+                pixelColor = pixelColor + camera.raycast(ray, scene);
             }
 
-            framebuffer[x+y*WIDTH] = pixelColor / (float)raysPerPixel;
+            framebuffer[x+y*WIDTH] = pixelColor / (float)RAYS_PER_PIXEL;
         }
     }
 
@@ -77,6 +75,8 @@ int main(int argc, char** argv)
         ofs << (char)(255 * std::sqrt(framebuffer[i].z));
     }
     ofs.close();
+
+    delete[] framebuffer;
 
     return 0;
 }
