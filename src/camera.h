@@ -1,5 +1,7 @@
 #pragma once
 
+#include "config.h"
+
 struct Camera
 {
     Vec3 pos;
@@ -8,18 +10,28 @@ struct Camera
     Vec3 Y;
     Vec3 Z;
 
+    Vec3* framebuffer;
     Material backgroundMaterial;
 
     const int MAX_NUMBER_OF_BOUNCES = 3;
 
-    Camera(Vec3 p, Vec3 zAxys) : pos(p)
+Camera(Vec3 p, Config &config) : pos(p)
         {
+            Vec3 worldZAxys = Vec3(0, 0, 1);
+
             Z = pos.normalize();
-            X = Z.cross(zAxys).normalize();
+            X = Z.cross(worldZAxys).normalize();
             Y = Z.cross(X).normalize();
 
-            backgroundMaterial.emittedColor = Vec3(0.13f, 0.13f, 0.22f);
+            framebuffer = new Vec3[config.WIDTH * config.HEIGHT];
+
+            backgroundMaterial.emittedColor = Vec3(0.81f, 0.81f, 0.75f);
         };
+
+    ~Camera()
+        {
+            delete[] framebuffer;
+        }
 
     Vec3 raycast(Ray ray, Scene& scene)
         {
