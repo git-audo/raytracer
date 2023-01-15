@@ -10,7 +10,7 @@
 #include "config.h"
 #include "rayTracer.h"
 
-int main(int argc, char** argv)
+int main(int argc, char **argv)
 {
     Config config;
     Scene scene;
@@ -21,16 +21,7 @@ int main(int argc, char** argv)
     RayTracer rayTracer = RayTracer(config, scene, camera);
     rayTracer.renderScene();
 
-    std::ofstream ofs;
-    ofs.open("./output.ppm");
-    ofs << "P6\n" << config.WIDTH << " " << config.HEIGHT << "\n255\n";
-    for (size_t i = 0; i < config.HEIGHT * config.WIDTH; ++i)
-    {
-        ofs << (char)(255 * std::sqrt(camera.framebuffer[i].x));
-        ofs << (char)(255 * std::sqrt(camera.framebuffer[i].y));
-        ofs << (char)(255 * std::sqrt(camera.framebuffer[i].z));
-    }
-    ofs.close();
+    rayTracer.saveOutputFile();
 
     return 0;
 }
