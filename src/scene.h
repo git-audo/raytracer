@@ -20,7 +20,8 @@ struct Plane
     Plane(Vec3 n, float d) : normal(n), distance(d) {};
     Plane() {};
 
-    bool intersectsRay(Ray& r, float& d) {
+    bool intersectsRay(Ray& r, float& d)
+    {
         float numerator   = - distance - normal.inner(r.origin);
         float denominator = normal.inner(r.direction);
 
@@ -47,7 +48,8 @@ struct Sphere
     Sphere(Vec3 c, float r) : center(c), radius(r) {};
     Sphere() {};
 
-    bool intersectsRay(Ray& r, float& d) {
+    bool intersectsRay(Ray& r, float& d)
+    {
         float a = r.direction.inner(r.direction);
         float b = (2 * r.direction.inner(r.origin));
         float c = r.origin.inner(r.origin) - radius * radius;
@@ -82,20 +84,24 @@ struct RectYZ
     Vec3 normal;
     Material* material;
 
-    RectYZ(float x, Vec2 vertexA, Vec2 vertexB) : x(x), vertexA(vertexA), vertexB(vertexB) {
+    RectYZ(float x, Vec2 vertexA, Vec2 vertexB) : x(x), vertexA(vertexA), vertexB(vertexB)
+    {
         normal = Vec3(1, 0, 0);
     };
 
-    bool intersectsRay(Ray& r, float& d) {
+    bool intersectsRay(Ray& r, float& d)
+    {
         d = (x - r.origin.x) / r.direction.x;
-        if (d < 0 || d > FLT_MAX){
+        if (d < 0 || d > FLT_MAX)
+        {
             return false;
         }
 
         float y = r.origin.y + d * r.direction.y;
         float z = r.origin.z + d * r.direction.z;
 
-        if (y < vertexA.u || y > vertexB.u || z < vertexA.v || z > vertexB.v) {
+        if (y < vertexA.u || y > vertexB.u || z < vertexA.v || z > vertexB.v)
+        {
             return false;
         }
 
@@ -106,7 +112,8 @@ struct RectYZ
 class Scene
 {
 private:
-    bool loadFromFile() {
+    bool loadFromFile()
+    {
         std::ifstream sceneFile("data/scene.txt");
         if (!sceneFile.is_open())
             return false;
@@ -114,10 +121,12 @@ private:
         std::string objectType;
         std::string x, y, z, m;
 
-        while (!sceneFile.eof()) {
+        while (!sceneFile.eof())
+        {
             sceneFile >> objectType;
 
-            if (!objectType.compare(std::string("MAT"))) {
+            if (!objectType.compare(std::string("MAT")))
+            {
                 std::string r;
                 sceneFile >> m >> x >> y >> z >> r;
 
@@ -131,7 +140,8 @@ private:
                 materials.insert(std::pair<int, Material>(stoi(m), material));
             }
 
-            if (!objectType.compare(std::string("PLANE"))) {
+            if (!objectType.compare(std::string("PLANE")))
+            {
                 std::string d;
                 sceneFile >> x >> y >> z >> d >> m;
 
@@ -142,7 +152,8 @@ private:
                 planes.push_back(plane);
             }
 
-            if (!objectType.compare(std::string("SPHERE"))) {
+            if (!objectType.compare(std::string("SPHERE")))
+            {
                 std::string r;
                 sceneFile >> x >> y >> z >> r >> m;
 
@@ -153,7 +164,8 @@ private:
                 spheres.push_back(sphere);
             }
 
-            if (!objectType.compare(std::string("RECT"))) {
+            if (!objectType.compare(std::string("RECT")))
+            {
                 std::string x1, y1, d;
                 sceneFile >> x >> y >> x1 >> y1 >> d >> m;
 
@@ -162,7 +174,8 @@ private:
                 rects.push_back(rect);
             }
 
-            if (!objectType.compare(std::string("#"))) {
+            if (!objectType.compare(std::string("#")))
+            {
                 std::getline(sceneFile, m);
             }
 
@@ -173,8 +186,10 @@ private:
     }
 
 public:
-    Scene() {
-        if (!loadFromFile()) {
+    Scene()
+    {
+        if (!loadFromFile())
+        {
             std::cerr << "ERROR: could not open the scene file\n";
             std::exit(EXIT_FAILURE);
         };

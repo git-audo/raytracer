@@ -2,35 +2,37 @@
 
 #include <thread>
 
-struct RayTracer {
+struct RayTracer
+{
     Config &config;
     Scene &scene;
     Camera &camera;
 
-RayTracer(Config &config, Scene &scene, Camera &camera): config(config), scene(scene), camera(camera) {};
+    RayTracer(Config &config, Scene &scene, Camera &camera): config(config), scene(scene), camera(camera) {};
 
-    void renderTile(const int minX, const int maxX, const int minY, const int maxY) {
+    void renderTile(const int minX, const int maxX, const int minY, const int maxY)
+    {
         float screenW = 1.0f;
         float screenH = 1.0f;
         float focalDistance = 1.0f;
         Vec3 screenCenter = camera.pos - (camera.Z * focalDistance);
 
-        float pixelW = (screenW / (float)config.WIDTH);
-        float pixelH = (screenH / (float)config.HEIGHT);
+        float pixelW = (screenW / (float) config.WIDTH);
+        float pixelH = (screenH / (float) config.HEIGHT);
 
         if (config.WIDTH > config.HEIGHT)
         {
-            screenH = (float)config.HEIGHT / (float)config.WIDTH;
+            screenH = (float) config.HEIGHT / (float) config.WIDTH;
         }
 
         Ray ray = {};
 
         for (size_t x = minX; x < maxX; x++)
         {
-            float screenX = (float)x * 2.0f / (float)config.WIDTH - 1.0f;
+            float screenX = (float) x * 2.0f / (float) config.WIDTH - 1.0f;
             for (size_t y = minY; y < maxY; y++)
             {
-                float screenY = (float)y * 2.0f / (float)config.HEIGHT - 1.0f;
+                float screenY = (float) y * 2.0f / (float) config.HEIGHT - 1.0f;
 
                 Vec3 pixelColor = Vec3(0, 0, 0);
                 for (uint16_t i = 0; i < config.RAYS_PER_PIXEL; i++)
@@ -48,25 +50,29 @@ RayTracer(Config &config, Scene &scene, Camera &camera): config(config), scene(s
                     pixelColor = pixelColor + camera.raycast(ray, scene);
                 }
 
-                camera.framebuffer[x+y*config.WIDTH] = pixelColor / (float)config.RAYS_PER_PIXEL;
+                camera.framebuffer[x+y*config.WIDTH] = pixelColor / (float) config.RAYS_PER_PIXEL;
             }
         }
     }
 
-    void renderScene() {
+    void renderScene()
+    {
         std::vector<std::thread> threads;
 
-        for (uint8_t i = 0; i < config.NUM_OF_CORES; i++) {
-            int tileHeight = config.HEIGHT/config.NUM_OF_CORES;
-            threads.emplace_back(std::thread(&RayTracer::renderTile, this, 0, config.WIDTH, i*tileHeight, (i+1)*tileHeight));
+        for (uint8_t i = 0; i < config.NUM_OF_CORES; i++)
+        {
+            int tileHeight = config.HEIGHT / config.NUM_OF_CORES;
+            threads.emplace_back(std::thread(&RayTracer::renderTile, this, 0, config.WIDTH, i * tileHeight, (i+1) * tileHeight));
         }
 
-        for (auto& t : threads) {
+        for (auto& t : threads)
+        {
             t.join();
         }
     }
 
-    void saveOutputFile() {
+    void saveOutputFile()
+    {
         std::ofstream ofs;
         ofs.open("./output.ppm");
         ofs << "P6\n" << config.WIDTH << " " << config.HEIGHT << "\n255\n";

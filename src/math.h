@@ -20,14 +20,16 @@ struct Vec3
     Vec3 operator*(const float d) const { return {x*d, y*d, z*d}; }
     Vec3 operator/(const float d) const { return {x/d, y/d, z/d}; }
 
-    bool operator!=(const Vec3& v) const {
+    bool operator!=(const Vec3& v) const
+    {
         if (x == v.x && y == v.y && z == v.z) return false;
         return true;
     }
 
     float length() { return std::sqrt(x*x + y*y + z*z); };
 
-    Vec3 normalize() {
+    Vec3 normalize()
+    {
         float l = length();
         Vec3 v = {};
 
@@ -41,7 +43,8 @@ struct Vec3
         return v;
     }
 
-    Vec3 cross(const Vec3& v) {
+    Vec3 cross(const Vec3& v)
+    {
         Vec3 result = {};
         result.x = y * v.z - z * v.y;
         result.y = z * v.x - x * v.z;
@@ -50,11 +53,13 @@ struct Vec3
         return result;
     }
 
-    float inner(const Vec3& v) {
+    float inner(const Vec3& v)
+    {
         return x * v.x + y * v.y + z * v.z;
     }
 
-    static Vec3 randomized() {
+    static Vec3 randomized()
+    {
         Vec3 v = {};
 
         v.x = randomFloat() * 2.0f - 1;
@@ -74,11 +79,12 @@ struct Vec2
 {
     float u=0, v=0;
 
-Vec2(float u, float v) : u(u), v(v) {};
+    Vec2(float u, float v) : u(u), v(v) {};
     Vec2() {};
 };
 
-struct Ray {
+struct Ray
+{
     Vec3 origin;
     Vec3 direction;
 
