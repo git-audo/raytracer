@@ -3,6 +3,7 @@
 #include <fstream>
 #include <iostream>
 #include <float.h>
+#include <chrono>
 
 #include "math.h"
 #include "scene.h"
@@ -19,7 +20,15 @@ int main(int argc, char **argv)
     Camera camera = Camera(cameraPos, config);
 
     RayTracer rayTracer = RayTracer(config, scene, camera);
+
+    printf("Rendering scene...\n");
+    auto startTime = std::chrono::high_resolution_clock::now();
+
     rayTracer.renderScene();
+
+    auto endTime = std::chrono::high_resolution_clock::now();
+    auto renderingTime = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
+    printf("Rendering time: %lld ms\n", renderingTime.count());
 
     rayTracer.saveOutputFile();
 
